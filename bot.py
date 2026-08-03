@@ -556,10 +556,11 @@ Block or unblock users from accessing the bot.
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
     text = update.message.text
-    
+
     if is_user_blocked(user_id):
-             
-        # ===== APPLICATION SETUP =====
+        pass
+
+# ===== APPLICATION SETUP =====
 def main():
     # Create Application
     app = Application.builder().token(BOT_TOKEN).build()
