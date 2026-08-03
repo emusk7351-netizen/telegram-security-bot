@@ -8,7 +8,7 @@ from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import Application, CommandHandler, CallbackQueryHandler, MessageHandler, filters, ContextTypes
 
 # ===== CONFIGURATION =====
-BOT_TOKEN = "8850819693:AAHINxpHLoFTcNiZE0DqS-8cR7p83qBLSB4"
+BOT_TOKEN = BOT_TOKEN = os.environ.get("BOT_TOKEN")
 
 # YOUR TELEGRAM USER ID (get it from @userinfobot)
 # Replace this with your actual Telegram user ID
