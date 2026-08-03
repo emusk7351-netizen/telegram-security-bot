@@ -558,8 +558,8 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     text = update.message.text
     
     if is_user_blocked(user_id):
-        
-# ===== APPLICATION SETUP =====
+             
+        # ===== APPLICATION SETUP =====
 def main():
     # Create Application
     app = Application.builder().token(BOT_TOKEN).build()
