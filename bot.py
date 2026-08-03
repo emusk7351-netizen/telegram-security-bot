@@ -559,3 +559,20 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     
     if is_user_blocked(user_id):
         
+# ===== APPLICATION SETUP =====
+def main():
+    # Create Application
+    app = Application.builder().token(BOT_TOKEN).build()
+
+    # Add handlers
+    app.add_handler(CommandHandler("start", start))
+    app.add_handler(CallbackQueryHandler(button_callback))
+    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
+
+    # Start the bot
+    print("Bot is starting...")
+    app.run_polling()
+
+if __name__ == "__main__":
+    time.sleep(5)
+    main()
