@@ -8,7 +8,7 @@ from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import Application, CommandHandler, CallbackQueryHandler, MessageHandler, filters, ContextTypes
 
 # ===== CONFIGURATION =====
-BOT_TOKEN = os.environ.get("BOT_TOKEN", "YOUR_BOT_TOKEN_HERE")
+BOT_TOKEN = os.environ.get("BOT_TOKEN", "8850819693:AAFoWI-u3k1t8m5x165KgkqIem85IP-rKDo)
 
 # Get the current directory
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
