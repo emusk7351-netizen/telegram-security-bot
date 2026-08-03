@@ -557,3 +557,7 @@ Block or unblock users from accessing the bot.
         ]
         reply_markup = InlineKeyboardMarkup(keyboard)
         await que
+if __name__ == "__main__":
+    import time
+    time.sleep(5)
+    application.run_polling()
